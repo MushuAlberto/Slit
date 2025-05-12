@@ -177,6 +177,7 @@ if archivo:
             col3, col4 = st.columns(2)
             if empresa_aljibe in ["Ambas", "M&Q"]:
                 with col3:
+                    st.image("mq.png", width=120)
                     cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
                     if verificar_datos(df_filtrado, cols_mq):
                         if df_filtrado["Fecha"].nunique() >= 2:
@@ -201,6 +202,7 @@ if archivo:
 
             if empresa_aljibe in ["Ambas", "Jorquera"]:
                 with col4:
+                    st.image("jorquera.png", width=120)
                     cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
                     if verificar_datos(df_filtrado, cols_jorquera):
                         if df_filtrado["Fecha"].nunique() >= 2:
