@@ -12,12 +12,10 @@ if archivo:
     df = pd.read_excel(
         archivo,
         sheet_name="Base de Datos",
-        usecols=[
-            "B", "AF", "AG", "AH", "AI", "AJ", "AK", "AV", "AW",
-            "AM", "AN", "AQ", "AR"
-        ],
+        usecols="B,AF:AW,AM:AN,AQ:AR",
         engine="openpyxl"
     )
+    # Asignar nombres a las columnas (¡importante!)
     df.columns = [
         "Fecha", "Producto", "Destino", "Ton. Programado", "Ton. Real",
         "Equipos Prog.", "Equipos Real", "Prom. Carga Prog.", "Prom. Carga Real",
