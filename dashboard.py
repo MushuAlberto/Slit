@@ -22,11 +22,11 @@ if archivo:
     df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
     df = df.dropna(subset=["Fecha"])
 
-    # Filtrar SOLO filas donde Producto es "SLIT"
-    df = df[df["Producto"] == "SLIT"]
+    # Reemplazar todos los NaN por 0
+    df = df.fillna(0)
 
-    # Filtrar SOLO datos desde el año 2025 en adelante
-    df = df[df["Fecha"].dt.year >= 2025]
+    # Solo producto SLIT y año 2025+
+    df = df[(df["Producto"] == "SLIT") & (df["Fecha"].dt.year >= 2025)]
 
     if df.empty:
         st.warning('No hay datos para el producto "SLIT" en el año 2025 o posterior en el archivo cargado.')
@@ -44,7 +44,6 @@ if archivo:
                 default=sorted(df["Destino"].dropna().unique())
             )
 
-        # Aplicar filtros
         df_filtrado = df[
             df["Fecha"].dt.date.isin(fechas) &
             df["Destino"].isin(destinos)
@@ -53,30 +52,17 @@ if archivo:
         st.write("Cantidad de filas después de filtrar:", len(df_filtrado))
         st.write("Columnas disponibles:", df_filtrado.columns.tolist())
 
-        def puede_graficar(df, columnas, x="Fecha"):
-            # Debe haber al menos 2 filas, al menos 2 valores distintos en x, y al menos una columna con más de 1 dato válido
-            if df.shape[0] < 2:
-                return False
-            if df[x].nunique() < 2:
-                return False
-            cols_validas = [c for c in columnas if c in df.columns and df[c].notna().sum() > 1]
-            return len(cols_validas) > 0
-
         st.subheader("Dashboard General")
 
         col1, col2 = st.columns(2)
         with col1:
             # Tonelaje
             cols_ton = ["Ton (Prog)", "Ton (Real)"]
-            cols_ton_validas = [c for c in cols_ton if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
-            st.write("Columnas de Tonelaje a graficar:", cols_ton_validas)
-            for c in cols_ton:
-                st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
-            if puede_graficar(df_filtrado, cols_ton):
+            if len(cols_ton) > 0 and df_filtrado["Fecha"].nunique() > 1:
                 fig_ton = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_ton_validas,
+                    y=cols_ton,
                     title="Tonelaje Programado vs Real"
                 )
                 st.plotly_chart(fig_ton, use_container_width=True)
@@ -85,15 +71,11 @@ if archivo:
 
             # Equipos
             cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
-            cols_equip_validas = [c for c in cols_equip if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
-            st.write("Columnas de Equipos a graficar:", cols_equip_validas)
-            for c in cols_equip:
-                st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
-            if puede_graficar(df_filtrado, cols_equip):
+            if len(cols_equip) > 0 and df_filtrado["Fecha"].nunique() > 1:
                 fig_equip = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_equip_validas,
+                    y=cols_equip,
                     title="Equipos Programados vs Reales"
                 )
                 st.plotly_chart(fig_equip, use_container_width=True)
@@ -103,15 +85,11 @@ if archivo:
         with col2:
             # Promedio de carga
             cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
-            cols_prom_validas = [c for c in cols_prom if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
-            st.write("Columnas de Promedio de Carga a graficar:", cols_prom_validas)
-            for c in cols_prom:
-                st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
-            if puede_graficar(df_filtrado, cols_prom):
+            if len(cols_prom) > 0 and df_filtrado["Fecha"].nunique() > 1:
                 fig_prom = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_prom_validas,
+                    y=cols_prom,
                     title="Promedio de Carga Programado vs Real"
                 )
                 st.plotly_chart(fig_prom, use_container_width=True)
@@ -119,9 +97,9 @@ if archivo:
                 st.info("No hay suficientes datos de Promedio de Carga para graficar.")
 
             # Gráfico por semana (colores diferentes cada 7 días)
-            inicio = df_filtrado["Fecha"].min()
-            df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
-            if "Ton (Real)" in df_filtrado.columns and df_filtrado["Ton (Real)"].notna().sum() > 1 and df_filtrado["Semana"].nunique() > 1:
+            if "Ton (Real)" in df_filtrado.columns and df_filtrado["Ton (Real)"].sum() > 0 and df_filtrado["Fecha"].nunique() > 1:
+                inicio = df_filtrado["Fecha"].min()
+                df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
                 fig_semana = px.line(
                     df_filtrado,
                     x="Fecha",
@@ -139,15 +117,11 @@ if archivo:
         col3, col4 = st.columns(2)
         with col3:
             cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
-            cols_mq_validas = [c for c in cols_mq if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
-            st.write("Columnas de Aljibes M&Q a graficar:", cols_mq_validas)
-            for c in cols_mq:
-                st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
-            if puede_graficar(df_filtrado, cols_mq):
+            if len(cols_mq) > 0 and df_filtrado["Fecha"].nunique() > 1:
                 fig_mq = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_mq_validas,
+                    y=cols_mq,
                     title="Aljibes M&Q: Programados vs Reales"
                 )
                 st.plotly_chart(fig_mq, use_container_width=True)
@@ -156,15 +130,11 @@ if archivo:
 
         with col4:
             cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
-            cols_jorquera_validas = [c for c in cols_jorquera if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
-            st.write("Columnas de Aljibes Jorquera a graficar:", cols_jorquera_validas)
-            for c in cols_jorquera:
-                st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
-            if puede_graficar(df_filtrado, cols_jorquera):
+            if len(cols_jorquera) > 0 and df_filtrado["Fecha"].nunique() > 1:
                 fig_jorquera = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_jorquera_validas,
+                    y=cols_jorquera,
                     title="Aljibes Jorquera: Programados vs Reales"
                 )
                 st.plotly_chart(fig_jorquera, use_container_width=True)
