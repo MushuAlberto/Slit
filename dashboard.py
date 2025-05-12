@@ -35,7 +35,6 @@ if archivo:
         df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
         df = df.dropna(subset=["Fecha"])
 
-        # Convertir explícitamente a numérico todas las columnas relevantes
         columnas_numericas = [
             "Ton (Prog)", "Ton (Real)",
             "Equipos (Prog)", "Equipos (Real)",
@@ -47,7 +46,6 @@ if archivo:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # Solo producto SLIT y año 2025+
         df = df[(df["Producto"] == "SLIT") & (df["Fecha"].dt.year >= 2025)]
 
         if df.empty:
@@ -78,13 +76,11 @@ if archivo:
             st.write("Cantidad de filas después de filtrar:", len(df_filtrado))
             st.write("Columnas disponibles:", df_filtrado.columns.tolist())
 
-            # Imagen general arriba del dashboard general
-            st.image("image.png", width=200)
             st.subheader("Dashboard General")
 
             col1, col2 = st.columns(2)
             with col1:
-                # Tonelaje
+                st.image("image.png", width=300)
                 cols_ton = ["Ton (Prog)", "Ton (Real)"]
                 if verificar_datos(df_filtrado, cols_ton):
                     if df_filtrado["Fecha"].nunique() >= 2:
@@ -107,7 +103,7 @@ if archivo:
                 else:
                     st.info("No hay suficientes datos de Tonelaje para graficar.")
 
-                # Equipos
+                st.image("image.png", width=300)
                 cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
                 if verificar_datos(df_filtrado, cols_equip):
                     if df_filtrado["Fecha"].nunique() >= 2:
@@ -131,7 +127,7 @@ if archivo:
                     st.info("No hay suficientes datos de Equipos para graficar.")
 
             with col2:
-                # Promedio de carga
+                st.image("image.png", width=300)
                 cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
                 if verificar_datos(df_filtrado, cols_prom):
                     if df_filtrado["Fecha"].nunique() >= 2:
@@ -154,7 +150,6 @@ if archivo:
                 else:
                     st.info("No hay suficientes datos de Promedio de Carga para graficar.")
 
-                # Gráfico por semana (solo si hay más de un día)
                 if (
                     "Ton (Real)" in df_filtrado.columns and
                     df_filtrado["Fecha"].nunique() >= 2 and
@@ -162,6 +157,7 @@ if archivo:
                 ):
                     inicio = df_filtrado["Fecha"].min()
                     df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
+                    st.image("image.png", width=300)
                     fig_semana = px.line(
                         df_filtrado,
                         x="Fecha",
