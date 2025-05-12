@@ -25,8 +25,11 @@ if archivo:
     # Filtrar SOLO filas donde Producto es "SLIT"
     df = df[df["Producto"] == "SLIT"]
 
+    # Filtrar SOLO datos desde el año 2025 en adelante
+    df = df[df["Fecha"].dt.year >= 2025]
+
     if df.empty:
-        st.warning('No hay datos para el producto "SLIT" en el archivo cargado.')
+        st.warning('No hay datos para el producto "SLIT" en el año 2025 o posterior en el archivo cargado.')
     else:
         with st.sidebar:
             st.header("Filtros Generales")
@@ -60,6 +63,9 @@ if archivo:
                 # Tonelaje
                 cols_ton = ["Ton (Prog)", "Ton (Real)"]
                 cols_ton_validas = [c for c in cols_ton if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
+                st.write("Columnas de Tonelaje a graficar:", cols_ton_validas)
+                for c in cols_ton:
+                    st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
                 if len(cols_ton_validas) > 0:
                     fig_ton = px.line(
                         df_filtrado,
@@ -74,6 +80,9 @@ if archivo:
                 # Equipos
                 cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
                 cols_equip_validas = [c for c in cols_equip if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
+                st.write("Columnas de Equipos a graficar:", cols_equip_validas)
+                for c in cols_equip:
+                    st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
                 if len(cols_equip_validas) > 0:
                     fig_equip = px.line(
                         df_filtrado,
@@ -89,6 +98,9 @@ if archivo:
                 # Promedio de carga
                 cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
                 cols_prom_validas = [c for c in cols_prom if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
+                st.write("Columnas de Promedio de Carga a graficar:", cols_prom_validas)
+                for c in cols_prom:
+                    st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
                 if len(cols_prom_validas) > 0:
                     fig_prom = px.line(
                         df_filtrado,
@@ -122,6 +134,9 @@ if archivo:
             with col3:
                 cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
                 cols_mq_validas = [c for c in cols_mq if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
+                st.write("Columnas de Aljibes M&Q a graficar:", cols_mq_validas)
+                for c in cols_mq:
+                    st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
                 if len(cols_mq_validas) > 0:
                     fig_mq = px.line(
                         df_filtrado,
@@ -136,6 +151,9 @@ if archivo:
             with col4:
                 cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
                 cols_jorquera_validas = [c for c in cols_jorquera if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
+                st.write("Columnas de Aljibes Jorquera a graficar:", cols_jorquera_validas)
+                for c in cols_jorquera:
+                    st.write(f"{c}: {df_filtrado[c].notna().sum()} datos válidos")
                 if len(cols_jorquera_validas) > 0:
                     fig_jorquera = px.line(
                         df_filtrado,
