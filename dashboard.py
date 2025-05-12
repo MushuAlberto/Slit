@@ -65,6 +65,10 @@ if archivo:
                     options=sorted(df["Destino"].unique()),
                     default=sorted(df["Destino"].unique())
                 )
+                empresa_aljibe = st.selectbox(
+                    "Selecciona empresa de aljibes a mostrar",
+                    ["Ambas", "M&Q", "Jorquera"]
+                )
 
             df_filtrado = df[
                 df["Fecha"].dt.date.isin(fechas) &
@@ -171,54 +175,57 @@ if archivo:
             st.subheader("Dashboard por Empresa")
 
             col3, col4 = st.columns(2)
-            with col3:
-                cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
-                if verificar_datos(df_filtrado, cols_mq):
-                    if df_filtrado["Fecha"].nunique() >= 2:
-                        fig_mq = px.line(
-                            df_filtrado.sort_values("Fecha"),
-                            x="Fecha",
-                            y=cols_mq,
-                            title="Aljibes M&Q: Programados vs Reales"
-                        )
-                        st.plotly_chart(fig_mq, use_container_width=True)
-                    elif df_filtrado["Fecha"].nunique() == 1:
-                        fig_mq = px.bar(
-                            df_filtrado,
-                            x="Fecha",
-                            y=cols_mq,
-                            barmode="group",
-                            title="Aljibes M&Q: Programados vs Reales (día único)"
-                        )
-                        st.plotly_chart(fig_mq, use_container_width=True)
-                else:
-                    st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
+            if empresa_aljibe in ["Ambas", "M&Q"]:
+                with col3:
+                    cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
+                    if verificar_datos(df_filtrado, cols_mq):
+                        if df_filtrado["Fecha"].nunique() >= 2:
+                            fig_mq = px.line(
+                                df_filtrado.sort_values("Fecha"),
+                                x="Fecha",
+                                y=cols_mq,
+                                title="Aljibes M&Q: Programados vs Reales"
+                            )
+                            st.plotly_chart(fig_mq, use_container_width=True)
+                        elif df_filtrado["Fecha"].nunique() == 1:
+                            fig_mq = px.bar(
+                                df_filtrado,
+                                x="Fecha",
+                                y=cols_mq,
+                                barmode="group",
+                                title="Aljibes M&Q: Programados vs Reales (día único)"
+                            )
+                            st.plotly_chart(fig_mq, use_container_width=True)
+                    else:
+                        st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
 
-            with col4:
-                cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
-                if verificar_datos(df_filtrado, cols_jorquera):
-                    if df_filtrado["Fecha"].nunique() >= 2:
-                        fig_jorquera = px.line(
-                            df_filtrado.sort_values("Fecha"),
-                            x="Fecha",
-                            y=cols_jorquera,
-                            title="Aljibes Jorquera: Programados vs Reales"
-                        )
-                        st.plotly_chart(fig_jorquera, use_container_width=True)
-                    elif df_filtrado["Fecha"].nunique() == 1:
-                        fig_jorquera = px.bar(
-                            df_filtrado,
-                            x="Fecha",
-                            y=cols_jorquera,
-                            barmode="group",
-                            title="Aljibes Jorquera: Programados vs Reales (día único)"
-                        )
-                        st.plotly_chart(fig_jorquera, use_container_width=True)
-                else:
-                    st.info("No hay suficientes datos de Aljibes Jorquera para graficar.")
+            if empresa_aljibe in ["Ambas", "Jorquera"]:
+                with col4:
+                    cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
+                    if verificar_datos(df_filtrado, cols_jorquera):
+                        if df_filtrado["Fecha"].nunique() >= 2:
+                            fig_jorquera = px.line(
+                                df_filtrado.sort_values("Fecha"),
+                                x="Fecha",
+                                y=cols_jorquera,
+                                title="Aljibes Jorquera: Programados vs Reales"
+                            )
+                            st.plotly_chart(fig_jorquera, use_container_width=True)
+                        elif df_filtrado["Fecha"].nunique() == 1:
+                            fig_jorquera = px.bar(
+                                df_filtrado,
+                                x="Fecha",
+                                y=cols_jorquera,
+                                barmode="group",
+                                title="Aljibes Jorquera: Programados vs Reales (día único)"
+                            )
+                            st.plotly_chart(fig_jorquera, use_container_width=True)
+                    else:
+                        st.info("No hay suficientes datos de Aljibes Jorquera para graficar.")
 
             st.markdown("---")
-            st.write("Datos filtrados:", df_filtrado)
+            with st.expander("Mostrar datos filtrados (opcional)"):
+                st.dataframe(df_filtrado)
 
     except Exception as e:
         st.error(f"Error al procesar el archivo: {str(e)}")
