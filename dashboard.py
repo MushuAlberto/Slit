@@ -77,6 +77,7 @@ if archivo:
             col1, col2 = st.columns(2)
 
             with col1:
+                st.image("image.png", width=700)
                 cols_ton = ["Ton (Prog)", "Ton (Real)"]
                 if verificar_datos(df_filtrado, cols_ton):
                     fig_ton = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_ton,
@@ -94,6 +95,7 @@ if archivo:
                     st.info("No hay suficientes datos de Equipos para graficar.")
 
             with col2:
+                st.image("image.png", width=700)
                 cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
                 if verificar_datos(df_filtrado, cols_prom):
                     fig_prom = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_prom,
@@ -117,6 +119,7 @@ if archivo:
             col3, col4 = st.columns(2)
             if empresa_aljibe in ["Ambas", "M&Q"]:
                 with col3:
+                    st.image("mq.png", width=120)
                     cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
                     if verificar_datos(df_filtrado, cols_mq):
                         fig_mq = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_mq,
@@ -127,6 +130,7 @@ if archivo:
 
             if empresa_aljibe in ["Ambas", "Jorquera"]:
                 with col4:
+                    st.image("jorquera.png", width=120)
                     cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
                     if verificar_datos(df_filtrado, cols_jorquera):
                         fig_jorquera = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_jorquera,
