@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.io as pio
-from fpdf import FPDF
+import base64
 import io
 
 st.set_page_config(layout="wide")
@@ -20,23 +19,13 @@ def verificar_datos(df, columnas_requeridas):
             return False
     return True
 
-def fig_to_pdf_bytes(fig, width=800, height=600):
-    img_bytes = pio.to_image(fig, format='png', width=width, height=height)
-    pdf = FPDF(unit='pt', format=[width, height])
-    pdf.add_page()
-    pdf.image(io.BytesIO(img_bytes), 0, 0, width, height)
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
-    return pdf_bytes
-
-def crear_pdf_con_todos(figs, titles):
-    pdf = FPDF(unit='pt', format='A4')
-    for fig, title in zip(figs, titles):
-        img_bytes = pio.to_image(fig, format='png', width=595, height=842)
-        pdf.add_page()
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 30, title, ln=True, align='C')
-        pdf.image(io.BytesIO(img_bytes), x=10, y=50, w=575)
-    return pdf.output(dest='S').encode('latin1')
+def get_html_download_link(fig, filename):
+    buffer = io.StringIO()
+    fig.write_html(buffer)
+    html_bytes = buffer.getvalue().encode()
+    b64 = base64.b64encode(html_bytes).decode()
+    href = f'<a href="data:text/html;base64,{b64}" download="{filename}.html">Descargar gráfico {filename}</a>'
+    return href
 
 archivo = st.file_uploader("Sube tu archivo Excel", type=["xls", "xlsx", "xlsm"])
 
@@ -100,16 +89,10 @@ if archivo:
             st.subheader("Dashboard General")
 
             col1, col2 = st.columns(2)
-
-            pdf_figs = []
-            pdf_titles = []
-
             with col1:
-                # Tonelaje
                 st.image("image.png", width=800)
                 cols_ton = ["Ton (Prog)", "Ton (Real)"]
                 if verificar_datos(df_filtrado, cols_ton):
-                    fig_ton = None
                     if df_filtrado["Fecha"].nunique() >= 2:
                         fig_ton = px.line(
                             df_filtrado.sort_values("Fecha"),
@@ -125,25 +108,14 @@ if archivo:
                             barmode="group",
                             title="Tonelaje Programado vs Real (día único)"
                         )
-                    if fig_ton:
-                        st.plotly_chart(fig_ton, use_container_width=True)
-                        pdf_figs.append(fig_ton)
-                        pdf_titles.append("Tonelaje Programado vs Real")
-                        pdf_bytes = fig_to_pdf_bytes(fig_ton)
-                        st.download_button(
-                            label="Descargar gráfico Tonelaje PDF",
-                            data=pdf_bytes,
-                            file_name="tonelaje.pdf",
-                            mime="application/pdf"
-                        )
+                    st.plotly_chart(fig_ton, use_container_width=True)
+                    st.markdown(get_html_download_link(fig_ton, "tonelaje"), unsafe_allow_html=True)
                 else:
                     st.info("No hay suficientes datos de Tonelaje para graficar.")
 
-                # Equipos
                 st.image("image.png", width=800)
                 cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
                 if verificar_datos(df_filtrado, cols_equip):
-                    fig_equip = None
                     if df_filtrado["Fecha"].nunique() >= 2:
                         fig_equip = px.line(
                             df_filtrado.sort_values("Fecha"),
@@ -159,26 +131,15 @@ if archivo:
                             barmode="group",
                             title="Equipos Programados vs Reales (día único)"
                         )
-                    if fig_equip:
-                        st.plotly_chart(fig_equip, use_container_width=True)
-                        pdf_figs.append(fig_equip)
-                        pdf_titles.append("Equipos Programados vs Reales")
-                        pdf_bytes = fig_to_pdf_bytes(fig_equip)
-                        st.download_button(
-                            label="Descargar gráfico Equipos PDF",
-                            data=pdf_bytes,
-                            file_name="equipos.pdf",
-                            mime="application/pdf"
-                        )
+                    st.plotly_chart(fig_equip, use_container_width=True)
+                    st.markdown(get_html_download_link(fig_equip, "equipos"), unsafe_allow_html=True)
                 else:
                     st.info("No hay suficientes datos de Equipos para graficar.")
 
             with col2:
-                # Promedio de carga
                 st.image("image.png", width=800)
                 cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
                 if verificar_datos(df_filtrado, cols_prom):
-                    fig_prom = None
                     if df_filtrado["Fecha"].nunique() >= 2:
                         fig_prom = px.line(
                             df_filtrado.sort_values("Fecha"),
@@ -194,21 +155,11 @@ if archivo:
                             barmode="group",
                             title="Promedio de Carga Programado vs Real (día único)"
                         )
-                    if fig_prom:
-                        st.plotly_chart(fig_prom, use_container_width=True)
-                        pdf_figs.append(fig_prom)
-                        pdf_titles.append("Promedio de Carga Programado vs Real")
-                        pdf_bytes = fig_to_pdf_bytes(fig_prom)
-                        st.download_button(
-                            label="Descargar gráfico Promedio Carga PDF",
-                            data=pdf_bytes,
-                            file_name="promedio_carga.pdf",
-                            mime="application/pdf"
-                        )
+                    st.plotly_chart(fig_prom, use_container_width=True)
+                    st.markdown(get_html_download_link(fig_prom, "promedio_carga"), unsafe_allow_html=True)
                 else:
                     st.info("No hay suficientes datos de Promedio de Carga para graficar.")
 
-                # Tonelaje por semana
                 st.image("image.png", width=800)
                 if (
                     "Ton (Real)" in df_filtrado.columns and
@@ -225,27 +176,9 @@ if archivo:
                         title="Tonelaje Real por Semana (colores diferentes)"
                     )
                     st.plotly_chart(fig_semana, use_container_width=True)
-                    pdf_figs.append(fig_semana)
-                    pdf_titles.append("Tonelaje Real por Semana")
-                    pdf_bytes = fig_to_pdf_bytes(fig_semana)
-                    st.download_button(
-                        label="Descargar gráfico Tonelaje Semana PDF",
-                        data=pdf_bytes,
-                        file_name="tonelaje_semana.pdf",
-                        mime="application/pdf"
-                    )
+                    st.markdown(get_html_download_link(fig_semana, "tonelaje_semana"), unsafe_allow_html=True)
                 else:
                     st.info("No hay suficientes datos de Tonelaje Real para graficar por semana.")
-
-            # Botón para descargar todos los gráficos juntos en un solo PDF
-            if pdf_figs:
-                pdf_todos = crear_pdf_con_todos(pdf_figs, pdf_titles)
-                st.download_button(
-                    label="Descargar TODOS los gráficos en un PDF",
-                    data=pdf_todos,
-                    file_name="todos_los_graficos.pdf",
-                    mime="application/pdf"
-                )
 
             st.markdown("---")
             st.subheader("Dashboard por Empresa")
@@ -256,7 +189,6 @@ if archivo:
                     st.image("mq.png", width=120)
                     cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
                     if verificar_datos(df_filtrado, cols_mq):
-                        fig_mq = None
                         if df_filtrado["Fecha"].nunique() >= 2:
                             fig_mq = px.line(
                                 df_filtrado.sort_values("Fecha"),
@@ -272,15 +204,8 @@ if archivo:
                                 barmode="group",
                                 title="Aljibes M&Q: Programados vs Reales (día único)"
                             )
-                        if fig_mq:
-                            st.plotly_chart(fig_mq, use_container_width=True)
-                            pdf_bytes = fig_to_pdf_bytes(fig_mq)
-                            st.download_button(
-                                label="Descargar gráfico Aljibes M&Q PDF",
-                                data=pdf_bytes,
-                                file_name="aljibes_mq.pdf",
-                                mime="application/pdf"
-                            )
+                        st.plotly_chart(fig_mq, use_container_width=True)
+                        st.markdown(get_html_download_link(fig_mq, "aljibes_mq"), unsafe_allow_html=True)
                     else:
                         st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
 
@@ -289,7 +214,6 @@ if archivo:
                     st.image("jorquera.png", width=120)
                     cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
                     if verificar_datos(df_filtrado, cols_jorquera):
-                        fig_jorquera = None
                         if df_filtrado["Fecha"].nunique() >= 2:
                             fig_jorquera = px.line(
                                 df_filtrado.sort_values("Fecha"),
@@ -305,15 +229,8 @@ if archivo:
                                 barmode="group",
                                 title="Aljibes Jorquera: Programados vs Reales (día único)"
                             )
-                        if fig_jorquera:
-                            st.plotly_chart(fig_jorquera, use_container_width=True)
-                            pdf_bytes = fig_to_pdf_bytes(fig_jorquera)
-                            st.download_button(
-                                label="Descargar gráfico Aljibes Jorquera PDF",
-                                data=pdf_bytes,
-                                file_name="aljibes_jorquera.pdf",
-                                mime="application/pdf"
-                            )
+                        st.plotly_chart(fig_jorquera, use_container_width=True)
+                        st.markdown(get_html_download_link(fig_jorquera, "aljibes_jorquera"), unsafe_allow_html=True)
                     else:
                         st.info("No hay suficientes datos de Aljibes Jorquera para graficar.")
 
