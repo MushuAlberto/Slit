@@ -50,71 +50,77 @@ if archivo:
         df["Destino"].isin(destinos)
     ]
 
-    st.subheader("Dashboard General")
+    st.write("Cantidad de filas después de filtrar:", len(df_filtrado))
+    st.write("Columnas disponibles:", df_filtrado.columns.tolist())
 
-    col1, col2 = st.columns(2)
-    with col1:
-        fig_ton = px.line(
-            df_filtrado,
-            x="Fecha",
-            y=["Ton (Prog)", "Ton (Real)"],
-            title="Tonelaje Programado vs Real"
-        )
-        st.plotly_chart(fig_ton, use_container_width=True)
+    if df_filtrado.empty:
+        st.warning("No hay datos para los filtros seleccionados. Por favor, ajusta los filtros.")
+    else:
+        st.subheader("Dashboard General")
 
-        fig_equip = px.line(
-            df_filtrado,
-            x="Fecha",
-            y=["Equipos (Prog)", "Equipos (Real)"],
-            title="Equipos Programados vs Reales"
-        )
-        st.plotly_chart(fig_equip, use_container_width=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_ton = px.line(
+                df_filtrado,
+                x="Fecha",
+                y=["Ton (Prog)", "Ton (Real)"],
+                title="Tonelaje Programado vs Real"
+            )
+            st.plotly_chart(fig_ton, use_container_width=True)
 
-    with col2:
-        fig_prom = px.line(
-            df_filtrado,
-            x="Fecha",
-            y=["Promedio Carga (Meta)", "Promedio Carga (Real)"],
-            title="Promedio de Carga Programado vs Real"
-        )
-        st.plotly_chart(fig_prom, use_container_width=True)
+            fig_equip = px.line(
+                df_filtrado,
+                x="Fecha",
+                y=["Equipos (Prog)", "Equipos (Real)"],
+                title="Equipos Programados vs Reales"
+            )
+            st.plotly_chart(fig_equip, use_container_width=True)
 
-        # Gráfico por semana (colores diferentes cada 7 días)
-        inicio = df_filtrado["Fecha"].min()
-        df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
-        fig_semana = px.line(
-            df_filtrado,
-            x="Fecha",
-            y="Ton (Real)",
-            color="Semana",
-            title="Tonelaje Real por Semana (colores diferentes)"
-        )
-        st.plotly_chart(fig_semana, use_container_width=True)
+        with col2:
+            fig_prom = px.line(
+                df_filtrado,
+                x="Fecha",
+                y=["Promedio Carga (Meta)", "Promedio Carga (Real)"],
+                title="Promedio de Carga Programado vs Real"
+            )
+            st.plotly_chart(fig_prom, use_container_width=True)
 
-    st.markdown("---")
-    st.subheader("Dashboard por Empresa")
+            # Gráfico por semana (colores diferentes cada 7 días)
+            inicio = df_filtrado["Fecha"].min()
+            df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
+            fig_semana = px.line(
+                df_filtrado,
+                x="Fecha",
+                y="Ton (Real)",
+                color="Semana",
+                title="Tonelaje Real por Semana (colores diferentes)"
+            )
+            st.plotly_chart(fig_semana, use_container_width=True)
 
-    col3, col4 = st.columns(2)
-    with col3:
-        fig_mq = px.line(
-            df_filtrado,
-            x="Fecha",
-            y=["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"],
-            title="Aljibes M&Q: Programados vs Reales"
-        )
-        st.plotly_chart(fig_mq, use_container_width=True)
+        st.markdown("---")
+        st.subheader("Dashboard por Empresa")
 
-    with col4:
-        fig_jorquera = px.line(
-            df_filtrado,
-            x="Fecha",
-            y=["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"],
-            title="Aljibes Jorquera: Programados vs Reales"
-        )
-        st.plotly_chart(fig_jorquera, use_container_width=True)
+        col3, col4 = st.columns(2)
+        with col3:
+            fig_mq = px.line(
+                df_filtrado,
+                x="Fecha",
+                y=["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"],
+                title="Aljibes M&Q: Programados vs Reales"
+            )
+            st.plotly_chart(fig_mq, use_container_width=True)
 
-    st.markdown("---")
-    st.write("Datos filtrados:", df_filtrado)
+        with col4:
+            fig_jorquera = px.line(
+                df_filtrado,
+                x="Fecha",
+                y=["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"],
+                title="Aljibes Jorquera: Programados vs Reales"
+            )
+            st.plotly_chart(fig_jorquera, use_container_width=True)
+
+        st.markdown("---")
+        st.write("Datos filtrados:", df_filtrado)
 
 else:
     st.info("Por favor, sube el archivo Excel con la hoja 'Base de Datos'.")
