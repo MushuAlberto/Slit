@@ -80,7 +80,7 @@ if archivo:
 
             col1, col2 = st.columns(2)
             with col1:
-                st.image("image.png", width=300)
+                st.image("image.png", width=500)
                 cols_ton = ["Ton (Prog)", "Ton (Real)"]
                 if verificar_datos(df_filtrado, cols_ton):
                     if df_filtrado["Fecha"].nunique() >= 2:
@@ -103,7 +103,7 @@ if archivo:
                 else:
                     st.info("No hay suficientes datos de Tonelaje para graficar.")
 
-                st.image("image.png", width=300)
+                st.image("image.png", width=500)
                 cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
                 if verificar_datos(df_filtrado, cols_equip):
                     if df_filtrado["Fecha"].nunique() >= 2:
@@ -127,7 +127,7 @@ if archivo:
                     st.info("No hay suficientes datos de Equipos para graficar.")
 
             with col2:
-                st.image("image.png", width=300)
+                st.image("image.png", width=500)
                 cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
                 if verificar_datos(df_filtrado, cols_prom):
                     if df_filtrado["Fecha"].nunique() >= 2:
@@ -157,7 +157,7 @@ if archivo:
                 ):
                     inicio = df_filtrado["Fecha"].min()
                     df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
-                    st.image("image.png", width=300)
+                    st.image("image.png", width=500)
                     fig_semana = px.line(
                         df_filtrado,
                         x="Fecha",
