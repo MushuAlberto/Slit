@@ -8,11 +8,11 @@ st.title("Tablero Despachos - Informe Operacional 2025")
 def verificar_datos(df, columnas_requeridas):
     if df.empty:
         return False
-    if df["Fecha"].nunique() < 2:
+    if not all(col in df.columns for col in columnas_requeridas):
+        return False
+    if df["Fecha"].nunique() < 1:
         return False
     for col in columnas_requeridas:
-        if col not in df.columns:
-            return False
         if df[col].notna().sum() < 1:
             return False
     return True
@@ -81,26 +81,46 @@ if archivo:
                 # Tonelaje
                 cols_ton = ["Ton (Prog)", "Ton (Real)"]
                 if verificar_datos(df_filtrado, cols_ton):
-                    fig_ton = px.line(
-                        df_filtrado.sort_values("Fecha"),
-                        x="Fecha",
-                        y=cols_ton,
-                        title="Tonelaje Programado vs Real"
-                    )
-                    st.plotly_chart(fig_ton, use_container_width=True)
+                    if df_filtrado["Fecha"].nunique() >= 2:
+                        fig_ton = px.line(
+                            df_filtrado.sort_values("Fecha"),
+                            x="Fecha",
+                            y=cols_ton,
+                            title="Tonelaje Programado vs Real"
+                        )
+                        st.plotly_chart(fig_ton, use_container_width=True)
+                    elif df_filtrado["Fecha"].nunique() == 1:
+                        fig_ton = px.bar(
+                            df_filtrado,
+                            x="Fecha",
+                            y=cols_ton,
+                            barmode="group",
+                            title="Tonelaje Programado vs Real (día único)"
+                        )
+                        st.plotly_chart(fig_ton, use_container_width=True)
                 else:
                     st.info("No hay suficientes datos de Tonelaje para graficar.")
 
                 # Equipos
                 cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
                 if verificar_datos(df_filtrado, cols_equip):
-                    fig_equip = px.line(
-                        df_filtrado.sort_values("Fecha"),
-                        x="Fecha",
-                        y=cols_equip,
-                        title="Equipos Programados vs Reales"
-                    )
-                    st.plotly_chart(fig_equip, use_container_width=True)
+                    if df_filtrado["Fecha"].nunique() >= 2:
+                        fig_equip = px.line(
+                            df_filtrado.sort_values("Fecha"),
+                            x="Fecha",
+                            y=cols_equip,
+                            title="Equipos Programados vs Reales"
+                        )
+                        st.plotly_chart(fig_equip, use_container_width=True)
+                    elif df_filtrado["Fecha"].nunique() == 1:
+                        fig_equip = px.bar(
+                            df_filtrado,
+                            x="Fecha",
+                            y=cols_equip,
+                            barmode="group",
+                            title="Equipos Programados vs Reales (día único)"
+                        )
+                        st.plotly_chart(fig_equip, use_container_width=True)
                 else:
                     st.info("No hay suficientes datos de Equipos para graficar.")
 
@@ -108,15 +128,44 @@ if archivo:
                 # Promedio de carga
                 cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
                 if verificar_datos(df_filtrado, cols_prom):
-                    fig_prom = px.line(
-                        df_filtrado.sort_values("Fecha"),
-                        x="Fecha",
-                        y=cols_prom,
-                        title="Promedio de Carga Programado vs Real"
-                    )
-                    st.plotly_chart(fig_prom, use_container_width=True)
+                    if df_filtrado["Fecha"].nunique() >= 2:
+                        fig_prom = px.line(
+                            df_filtrado.sort_values("Fecha"),
+                            x="Fecha",
+                            y=cols_prom,
+                            title="Promedio de Carga Programado vs Real"
+                        )
+                        st.plotly_chart(fig_prom, use_container_width=True)
+                    elif df_filtrado["Fecha"].nunique() == 1:
+                        fig_prom = px.bar(
+                            df_filtrado,
+                            x="Fecha",
+                            y=cols_prom,
+                            barmode="group",
+                            title="Promedio de Carga Programado vs Real (día único)"
+                        )
+                        st.plotly_chart(fig_prom, use_container_width=True)
                 else:
                     st.info("No hay suficientes datos de Promedio de Carga para graficar.")
+
+                # Gráfico por semana (solo si hay más de un día)
+                if (
+                    "Ton (Real)" in df_filtrado.columns and
+                    df_filtrado["Fecha"].nunique() >= 2 and
+                    df_filtrado["Ton (Real)"].sum() > 0
+                ):
+                    inicio = df_filtrado["Fecha"].min()
+                    df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
+                    fig_semana = px.line(
+                        df_filtrado,
+                        x="Fecha",
+                        y="Ton (Real)",
+                        color="Semana",
+                        title="Tonelaje Real por Semana (colores diferentes)"
+                    )
+                    st.plotly_chart(fig_semana, use_container_width=True)
+                else:
+                    st.info("No hay suficientes datos de Tonelaje Real para graficar por semana.")
 
             st.markdown("---")
             st.subheader("Dashboard por Empresa")
@@ -125,26 +174,46 @@ if archivo:
             with col3:
                 cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
                 if verificar_datos(df_filtrado, cols_mq):
-                    fig_mq = px.line(
-                        df_filtrado.sort_values("Fecha"),
-                        x="Fecha",
-                        y=cols_mq,
-                        title="Aljibes M&Q: Programados vs Reales"
-                    )
-                    st.plotly_chart(fig_mq, use_container_width=True)
+                    if df_filtrado["Fecha"].nunique() >= 2:
+                        fig_mq = px.line(
+                            df_filtrado.sort_values("Fecha"),
+                            x="Fecha",
+                            y=cols_mq,
+                            title="Aljibes M&Q: Programados vs Reales"
+                        )
+                        st.plotly_chart(fig_mq, use_container_width=True)
+                    elif df_filtrado["Fecha"].nunique() == 1:
+                        fig_mq = px.bar(
+                            df_filtrado,
+                            x="Fecha",
+                            y=cols_mq,
+                            barmode="group",
+                            title="Aljibes M&Q: Programados vs Reales (día único)"
+                        )
+                        st.plotly_chart(fig_mq, use_container_width=True)
                 else:
                     st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
 
             with col4:
                 cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
                 if verificar_datos(df_filtrado, cols_jorquera):
-                    fig_jorquera = px.line(
-                        df_filtrado.sort_values("Fecha"),
-                        x="Fecha",
-                        y=cols_jorquera,
-                        title="Aljibes Jorquera: Programados vs Reales"
-                    )
-                    st.plotly_chart(fig_jorquera, use_container_width=True)
+                    if df_filtrado["Fecha"].nunique() >= 2:
+                        fig_jorquera = px.line(
+                            df_filtrado.sort_values("Fecha"),
+                            x="Fecha",
+                            y=cols_jorquera,
+                            title="Aljibes Jorquera: Programados vs Reales"
+                        )
+                        st.plotly_chart(fig_jorquera, use_container_width=True)
+                    elif df_filtrado["Fecha"].nunique() == 1:
+                        fig_jorquera = px.bar(
+                            df_filtrado,
+                            x="Fecha",
+                            y=cols_jorquera,
+                            barmode="group",
+                            title="Aljibes Jorquera: Programados vs Reales (día único)"
+                        )
+                        st.plotly_chart(fig_jorquera, use_container_width=True)
                 else:
                     st.info("No hay suficientes datos de Aljibes Jorquera para graficar.")
 
