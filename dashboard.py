@@ -1,149 +1,172 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
 st.set_page_config(layout="wide")
-st.title("Tablero Despachos - Informe Operacional 2025")
+st.title("Dashboard de Tonelaje y Equipos por Empresa")
 
+# Función para normalizar nombres de empresas
+def normalizar_empresas(df):
+    empresa_mapping = {
+        "JORQUERA TRANSPORTE S A": "JORQUERA TRANSPORTE S. A.",
+        "MINING SERVICES AND DERIVATES": "M S & D SPA",
+        "MINING SERVICES AND DERIVATES SPA": "M S & D SPA",
+        "M S AND D": "M S & D SPA",
+        "M S AND D SPA": "M S & D SPA",
+        "MSANDD SPA": "M S & D SPA",
+        "M S D": "M S & D SPA",
+        "M S D SPA": "M S & D SPA",
+        "M S & D": "M S & D SPA",
+        "M S & D SPA": "M S & D SPA",
+        "MS&D SPA": "M S & D SPA",
+        "M AND Q SPA": "M&Q SPA",
+        "M AND Q": "M&Q SPA",
+        "M Q SPA": "M&Q SPA",
+        "MQ SPA": "M&Q SPA",
+        "M&Q SPA": "M&Q SPA",
+        "MANDQ SPA": "M&Q SPA",
+        "MINING AND QUARRYING SPA": "M&Q SPA",
+        "MINING AND QUARRYNG SPA": "M&Q SPA",
+        "AG SERVICE SPA": "AG SERVICES SPA",
+        "AG SERVICES SPA": "AG SERVICES SPA",
+        "COSEDUCAM S A": "COSEDUCAM S A",
+        "COSEDUCAM": "COSEDUCAM S A"
+    }
+    df['EMPRESA DE TRANSPORTE'] = df['EMPRESA DE TRANSPORTE'].str.strip().str.upper().map(empresa_mapping).fillna(df['EMPRESA DE TRANSPORTE'])
+    return df
+
+# Función para verificar datos
 def verificar_datos(df, columnas):
     if df.empty:
         return False
     if not all(col in df.columns for col in columnas):
         return False
-    if df["Fecha"].nunique() < 1:
+    if df["FECHA"].nunique() < 1:
         return False
     for col in columnas:
         if df[col].notna().sum() < 1:
             return False
     return True
 
-archivo = st.file_uploader("Sube tu archivo Excel", type=["xls", "xlsx", "xlsm"])
+# Carga primer archivo (05.- Histórico Romanas.xlsx)
+st.sidebar.header("Carga archivo Histórico Romanas")
+archivo_historico = st.sidebar.file_uploader("Sube '05.- Histórico Romanas.xlsx'", type=["xls", "xlsx", "xlsm"], key="historico")
 
-if archivo:
+# Carga segundo archivo para sumatoria diaria
+st.sidebar.header("Carga archivo para sumatoria diaria")
+archivo_sumatoria = st.sidebar.file_uploader("Sube archivo Excel para sumatoria diaria", type=["xls", "xlsx", "xlsm"], key="sumatoria")
+
+if archivo_historico is not None:
     try:
-        df = pd.read_excel(
-            archivo,
+        df_hist = pd.read_excel(
+            archivo_historico,
             sheet_name="Base de Datos",
             usecols=[
-                "Fecha", "Producto", "Destino", "Ton (Prog)", "Ton (Real)",
-                "Equipos (Prog)", "Equipos (Real)", "Promedio Carga (Meta)", "Promedio Carga (Real)",
-                "Aljibes M&Q (Prog)", "Aljibes M&Q (Real)", "Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"
+                "FECHA", "PRODUCTO", "DESTINO", "TONELAJE", "EMPRESA DE TRANSPORTE", "EQUIPOS"
             ],
             engine="openpyxl"
         )
-        df["Fecha"] = pd.to_datetime(df["Fecha"], errors="coerce")
-        df = df.dropna(subset=["Fecha"])
+        df_hist["FECHA"] = pd.to_datetime(df_hist["FECHA"], errors="coerce")
+        df_hist = df_hist.dropna(subset=["FECHA"])
+        df_hist = normalizar_empresas(df_hist)
+        df_hist = df_hist[df_hist["PRODUCTO"].str.strip().str.upper() == "SLIT"]
 
-        cols_numericas = [
-            "Ton (Prog)", "Ton (Real)",
-            "Equipos (Prog)", "Equipos (Real)",
-            "Promedio Carga (Meta)", "Promedio Carga (Real)",
-            "Aljibes M&Q (Prog)", "Aljibes M&Q (Real)",
-            "Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"
-        ]
-        for col in cols_numericas:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        # Dashboard combinado tonelaje y equipos por empresa
+        st.header("Gráfico combinado: Tonelaje y Cantidad de Equipos por Empresa")
 
-        df = df[(df["Producto"] == "SLIT") & (df["Fecha"].dt.year >= 2025)]
+        empresas = sorted(df_hist["EMPRESA DE TRANSPORTE"].unique())
+        empresa_seleccionada = st.selectbox("Selecciona empresa para gráfico combinado", empresas)
 
-        if df.empty:
-            st.warning('No hay datos para el producto "SLIT" en el año 2025 o posterior.')
+        df_filtrado_hist = df_hist[df_hist["EMPRESA DE TRANSPORTE"] == empresa_seleccionada]
+
+        if not df_filtrado_hist.empty:
+            df_agg = df_filtrado_hist.groupby(df_filtrado_hist["FECHA"].dt.date).agg({
+                "TONELAJE": "sum",
+                "EQUIPOS": "sum"
+            }).reset_index().rename(columns={"FECHA": "Fecha"})
+
+            fig_comb = px.bar(df_agg, x="Fecha", y="TONELAJE", labels={"TONELAJE": "Tonelaje (ton)"}, title=f"Tonelaje (barras) y Equipos (línea) - {empresa_seleccionada}")
+            fig_comb.add_scatter(x=df_agg["Fecha"], y=df_agg["EQUIPOS"], mode="lines+markers", name="Cantidad de Equipos", yaxis="y2")
+
+            fig_comb.update_layout(
+                yaxis2=dict(
+                    title="Cantidad de Equipos",
+                    overlaying="y",
+                    side="right"
+                ),
+                xaxis_title="Fecha",
+                yaxis_title="Tonelaje (ton)",
+                legend=dict(y=1, x=1),
+                hovermode="x unified"
+            )
+
+            st.plotly_chart(fig_comb, use_container_width=True)
         else:
-            with st.sidebar:
-                st.header("Filtros Generales")
-                fechas = st.multiselect(
-                    "Selecciona una o más fechas",
-                    options=sorted(df["Fecha"].dt.date.unique()),
-                    default=sorted(df["Fecha"].dt.date.unique())
-                )
-                destinos = st.multiselect(
-                    "Selecciona uno o más destinos",
-                    options=sorted(df["Destino"].unique()),
-                    default=sorted(df["Destino"].unique())
-                )
-                empresa_aljibe = st.selectbox(
-                    "Selecciona empresa de aljibes a mostrar",
-                    ["Ambas", "M&Q", "Jorquera"]
-                )
+            st.info("No hay datos para la empresa seleccionada en el archivo histórico.")
 
-            df_filtrado = df[
-                df["Fecha"].dt.date.isin(fechas) &
-                df["Destino"].isin(destinos)
-            ]
+if archivo_sumatoria is not None:
+    try:
+        df_sum = pd.read_excel(archivo_sumatoria)
+        df_sum = normalizar_empresas(df_sum)
+        df_sum = df_sum[df_sum['PRODUCTO'].str.strip().str.upper() == 'SLIT'].copy()
+        df_sum['FECHA'] = pd.to_datetime(df_sum['FECHA'], dayfirst=True)
 
-            st.subheader("Dashboard General")
-            col1, col2 = st.columns(2)
+        st.header("Gráfico sumatoria diaria de tonelaje por empresa con tonelaje programado")
 
-            with col1:
-                st.image("image.png", width=700)
-                cols_ton = ["Ton (Prog)", "Ton (Real)"]
-                if verificar_datos(df_filtrado, cols_ton):
-                    fig_ton = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_ton,
-                                    title="Tonelaje Programado vs Real")
-                    st.plotly_chart(fig_ton, use_container_width=True)
-                else:
-                    st.info("No hay suficientes datos de Tonelaje para graficar.")
+        empresas_sum = sorted(df_sum['EMPRESA DE TRANSPORTE'].unique())
+        empresas_seleccionadas = st.multiselect("Selecciona Empresas (sumatoria diaria)", empresas_sum, default=empresas_sum)
 
-                cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
-                if verificar_datos(df_filtrado, cols_equip):
-                    fig_equip = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_equip,
-                                      title="Equipos Programados vs Reales")
-                    st.plotly_chart(fig_equip, use_container_width=True)
-                else:
-                    st.info("No hay suficientes datos de Equipos para graficar.")
+        fechas_sum = sorted(df_sum['FECHA'].dt.date.unique())
+        fechas_seleccionadas = st.multiselect("Selecciona Fechas (sumatoria diaria)", fechas_sum, default=fechas_sum)
 
-            with col2:
-                st.image("image.png", width=700)
-                cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
-                if verificar_datos(df_filtrado, cols_prom):
-                    fig_prom = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_prom,
-                                     title="Promedio de Carga Programado vs Real")
-                    st.plotly_chart(fig_prom, use_container_width=True)
-                else:
-                    st.info("No hay suficientes datos de Promedio de Carga para graficar.")
+        df_filtrado_sum = df_sum[
+            (df_sum['EMPRESA DE TRANSPORTE'].isin(empresas_seleccionadas)) &
+            (df_sum['FECHA'].dt.date.isin(fechas_seleccionadas))
+        ]
 
-                if "Ton (Real)" in df_filtrado.columns and df_filtrado["Fecha"].nunique() > 1:
-                    inicio = df_filtrado["Fecha"].min()
-                    df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
-                    fig_semana = px.line(df_filtrado, x="Fecha", y="Ton (Real)",
-                                       color="Semana", title="Tonelaje Real por Semana")
-                    st.plotly_chart(fig_semana, use_container_width=True)
-                else:
-                    st.info("No hay suficientes datos de Tonelaje Real para graficar por semana.")
+        if not df_filtrado_sum.empty:
+            df_grouped = df_filtrado_sum.groupby(['FECHA', 'EMPRESA DE TRANSPORTE'])['TONELAJE'].sum().reset_index()
 
-            st.markdown("---")
-            st.subheader("Dashboard por Empresa")
+            tonelaje_programado = 1197
 
-            col3, col4 = st.columns(2)
-            if empresa_aljibe in ["Ambas", "M&Q"]:
-                with col3:
-                    st.image("mq.png", width=120)
-                    cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
-                    if verificar_datos(df_filtrado, cols_mq):
-                        fig_mq = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_mq,
-                                       title="Aljibes M&Q: Programados vs Reales")
-                        st.plotly_chart(fig_mq, use_container_width=True)
-                    else:
-                        st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
+            fig_sum = go.Figure()
 
-            if empresa_aljibe in ["Ambas", "Jorquera"]:
-                with col4:
-                    st.image("jorquera.png", width=120)
-                    cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
-                    if verificar_datos(df_filtrado, cols_jorquera):
-                        fig_jorquera = px.line(df_filtrado.sort_values("Fecha"), x="Fecha", y=cols_jorquera,
-                                             title="Aljibes Jorquera: Programados vs Reales")
-                        st.plotly_chart(fig_jorquera, use_container_width=True)
-                    else:
-                        st.info("No hay suficientes datos de Aljibes Jorquera para graficar.")
+            for empresa in df_grouped['EMPRESA DE TRANSPORTE'].unique():
+                df_emp = df_grouped[df_grouped['EMPRESA DE TRANSPORTE'] == empresa]
+                fig_sum.add_trace(go.Bar(
+                    x=df_emp['FECHA'],
+                    y=df_emp['TONELAJE'],
+                    name=f'Real - {empresa}'
+                ))
 
-            st.markdown("---")
-            with st.expander("Mostrar datos filtrados (opcional)"):
-                st.dataframe(df_filtrado)
+            fechas_sorted = sorted(df_grouped['FECHA'].unique())
+            fig_sum.add_trace(go.Scatter(
+                x=fechas_sorted,
+                y=[tonelaje_programado] * len(fechas_sorted),
+                mode='lines',
+                name='Tonelaje Programado (1197)',
+                line=dict(color='red', dash='dash')
+            ))
+
+            fig_sum.update_layout(
+                title='Sumatoria Diaria de Tonelaje por Empresa (Producto SLIT) vs Tonelaje Programado',
+                xaxis_title='Fecha',
+                yaxis_title='Tonelaje (ton)',
+                barmode='group',
+                height=600
+            )
+
+            st.plotly_chart(fig_sum, use_container_width=True)
+
+            with st.expander("Ver datos detallados sumatoria diaria"):
+                st.dataframe(df_grouped)
+        else:
+            st.info("No hay datos para los filtros seleccionados en sumatoria diaria.")
 
     except Exception as e:
-        st.error(f"Error al procesar el archivo: {str(e)}")
-else:
-    st.info("Por favor, sube el archivo Excel con la hoja 'Base de Datos'.")
+        st.error(f"Ocurrió un error al procesar el archivo de sumatoria diaria: {str(e)}")
+
+if archivo_historico is None and archivo_sumatoria is None:
+    st.info("Por favor, sube al menos uno de los archivos Excel para comenzar.")
