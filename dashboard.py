@@ -58,15 +58,14 @@ archivo_historico = st.sidebar.file_uploader("Sube '05.- Histórico Romanas.xlsx
 st.sidebar.header("Carga archivo para sumatoria diaria")
 archivo_sumatoria = st.sidebar.file_uploader("Sube archivo Excel para sumatoria diaria", type=["xls", "xlsx", "xlsm"], key="sumatoria")
 
+# Procesamiento del archivo histórico
 if archivo_historico is not None:
     try:
         df_hist = pd.read_excel(
             archivo_historico,
-            sheet_name="Base de Datos",
             usecols=[
                 "FECHA", "PRODUCTO", "DESTINO", "TONELAJE", "EMPRESA DE TRANSPORTE", "EQUIPOS"
             ],
-            engine="openpyxl"
         )
         df_hist["FECHA"] = pd.to_datetime(df_hist["FECHA"], errors="coerce")
         df_hist = df_hist.dropna(subset=["FECHA"])
@@ -106,6 +105,10 @@ if archivo_historico is not None:
         else:
             st.info("No hay datos para la empresa seleccionada en el archivo histórico.")
 
+    except Exception as e:
+        st.error(f"Ocurrió un error al procesar el archivo histórico: {str(e)}")
+
+# Procesamiento del archivo de sumatoria diaria
 if archivo_sumatoria is not None:
     try:
         df_sum = pd.read_excel(archivo_sumatoria)
@@ -119,7 +122,7 @@ if archivo_sumatoria is not None:
         empresas_seleccionadas = st.multiselect("Selecciona Empresas (sumatoria diaria)", empresas_sum, default=empresas_sum)
 
         fechas_sum = sorted(df_sum['FECHA'].dt.date.unique())
-        fechas_seleccionadas = st.multiselect("Selecciona Fechas (sumatoria diaria)", fechas_sum, default=fechas_sum)
+        fechas_seleccionadas = st.multiselect("Selecciona Fechas (sumatoria diaria)", fechas_sum, default=fechas_seleccionadas)
 
         df_filtrado_sum = df_sum[
             (df_sum['EMPRESA DE TRANSPORTE'].isin(empresas_seleccionadas)) &
