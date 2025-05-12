@@ -53,8 +53,8 @@ if archivo:
     st.write("Cantidad de filas después de filtrar:", len(df_filtrado))
     st.write("Columnas disponibles:", df_filtrado.columns.tolist())
 
-    if df_filtrado.empty:
-        st.warning("No hay datos para los filtros seleccionados. Por favor, ajusta los filtros.")
+    if df_filtrado.shape[0] < 2:
+        st.warning("No hay suficientes datos para graficar (se requiere al menos 2 filas después de filtrar). Ajusta los filtros.")
     else:
         st.subheader("Dashboard General")
 
@@ -62,7 +62,7 @@ if archivo:
         with col1:
             # Tonelaje
             cols_ton = ["Ton (Prog)", "Ton (Real)"]
-            cols_ton_validas = [c for c in cols_ton if df_filtrado[c].notna().sum() > 0]
+            cols_ton_validas = [c for c in cols_ton if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
             if cols_ton_validas:
                 fig_ton = px.line(
                     df_filtrado,
@@ -72,11 +72,11 @@ if archivo:
                 )
                 st.plotly_chart(fig_ton, use_container_width=True)
             else:
-                st.info("No hay datos de Tonelaje para graficar.")
+                st.info("No hay suficientes datos de Tonelaje para graficar.")
 
             # Equipos
             cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
-            cols_equip_validas = [c for c in cols_equip if df_filtrado[c].notna().sum() > 0]
+            cols_equip_validas = [c for c in cols_equip if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
             if cols_equip_validas:
                 fig_equip = px.line(
                     df_filtrado,
@@ -86,12 +86,12 @@ if archivo:
                 )
                 st.plotly_chart(fig_equip, use_container_width=True)
             else:
-                st.info("No hay datos de Equipos para graficar.")
+                st.info("No hay suficientes datos de Equipos para graficar.")
 
         with col2:
             # Promedio de carga
             cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
-            cols_prom_validas = [c for c in cols_prom if df_filtrado[c].notna().sum() > 0]
+            cols_prom_validas = [c for c in cols_prom if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
             if cols_prom_validas:
                 fig_prom = px.line(
                     df_filtrado,
@@ -101,12 +101,12 @@ if archivo:
                 )
                 st.plotly_chart(fig_prom, use_container_width=True)
             else:
-                st.info("No hay datos de Promedio de Carga para graficar.")
+                st.info("No hay suficientes datos de Promedio de Carga para graficar.")
 
             # Gráfico por semana (colores diferentes cada 7 días)
             inicio = df_filtrado["Fecha"].min()
             df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
-            if df_filtrado["Ton (Real)"].notna().sum() > 0:
+            if "Ton (Real)" in df_filtrado.columns and df_filtrado["Ton (Real)"].notna().sum() > 1:
                 fig_semana = px.line(
                     df_filtrado,
                     x="Fecha",
@@ -116,7 +116,7 @@ if archivo:
                 )
                 st.plotly_chart(fig_semana, use_container_width=True)
             else:
-                st.info("No hay datos de Tonelaje Real para graficar por semana.")
+                st.info("No hay suficientes datos de Tonelaje Real para graficar por semana.")
 
         st.markdown("---")
         st.subheader("Dashboard por Empresa")
@@ -124,7 +124,7 @@ if archivo:
         col3, col4 = st.columns(2)
         with col3:
             cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
-            cols_mq_validas = [c for c in cols_mq if df_filtrado[c].notna().sum() > 0]
+            cols_mq_validas = [c for c in cols_mq if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
             if cols_mq_validas:
                 fig_mq = px.line(
                     df_filtrado,
@@ -134,11 +134,11 @@ if archivo:
                 )
                 st.plotly_chart(fig_mq, use_container_width=True)
             else:
-                st.info("No hay datos de Aljibes M&Q para graficar.")
+                st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
 
         with col4:
             cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
-            cols_jorquera_validas = [c for c in cols_jorquera if df_filtrado[c].notna().sum() > 0]
+            cols_jorquera_validas = [c for c in cols_jorquera if c in df_filtrado.columns and df_filtrado[c].notna().sum() > 1]
             if cols_jorquera_validas:
                 fig_jorquera = px.line(
                     df_filtrado,
@@ -148,7 +148,7 @@ if archivo:
                 )
                 st.plotly_chart(fig_jorquera, use_container_width=True)
             else:
-                st.info("No hay datos de Aljibes Jorquera para graficar.")
+                st.info("No hay suficientes datos de Aljibes Jorquera para graficar.")
 
         st.markdown("---")
         st.write("Datos filtrados:", df_filtrado)
