@@ -57,12 +57,11 @@ if archivo:
         col1, col2 = st.columns(2)
         with col1:
             # Tonelaje
-            cols_ton = ["Ton (Prog)", "Ton (Real)"]
-            if len(cols_ton) > 0 and df_filtrado["Fecha"].nunique() > 1:
+            if df_filtrado.shape[0] >= 2 and df_filtrado["Fecha"].nunique() >= 2:
                 fig_ton = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_ton,
+                    y=["Ton (Prog)", "Ton (Real)"],
                     title="Tonelaje Programado vs Real"
                 )
                 st.plotly_chart(fig_ton, use_container_width=True)
@@ -70,12 +69,11 @@ if archivo:
                 st.info("No hay suficientes datos de Tonelaje para graficar.")
 
             # Equipos
-            cols_equip = ["Equipos (Prog)", "Equipos (Real)"]
-            if len(cols_equip) > 0 and df_filtrado["Fecha"].nunique() > 1:
+            if df_filtrado.shape[0] >= 2 and df_filtrado["Fecha"].nunique() >= 2:
                 fig_equip = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_equip,
+                    y=["Equipos (Prog)", "Equipos (Real)"],
                     title="Equipos Programados vs Reales"
                 )
                 st.plotly_chart(fig_equip, use_container_width=True)
@@ -84,12 +82,11 @@ if archivo:
 
         with col2:
             # Promedio de carga
-            cols_prom = ["Promedio Carga (Meta)", "Promedio Carga (Real)"]
-            if len(cols_prom) > 0 and df_filtrado["Fecha"].nunique() > 1:
+            if df_filtrado.shape[0] >= 2 and df_filtrado["Fecha"].nunique() >= 2:
                 fig_prom = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_prom,
+                    y=["Promedio Carga (Meta)", "Promedio Carga (Real)"],
                     title="Promedio de Carga Programado vs Real"
                 )
                 st.plotly_chart(fig_prom, use_container_width=True)
@@ -97,7 +94,12 @@ if archivo:
                 st.info("No hay suficientes datos de Promedio de Carga para graficar.")
 
             # Gráfico por semana (colores diferentes cada 7 días)
-            if "Ton (Real)" in df_filtrado.columns and df_filtrado["Ton (Real)"].sum() > 0 and df_filtrado["Fecha"].nunique() > 1:
+            if (
+                "Ton (Real)" in df_filtrado.columns and
+                df_filtrado.shape[0] >= 2 and
+                df_filtrado["Fecha"].nunique() >= 2 and
+                df_filtrado["Ton (Real)"].sum() > 0
+            ):
                 inicio = df_filtrado["Fecha"].min()
                 df_filtrado["Semana"] = ((df_filtrado["Fecha"] - inicio).dt.days // 7) + 1
                 fig_semana = px.line(
@@ -116,12 +118,11 @@ if archivo:
 
         col3, col4 = st.columns(2)
         with col3:
-            cols_mq = ["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"]
-            if len(cols_mq) > 0 and df_filtrado["Fecha"].nunique() > 1:
+            if df_filtrado.shape[0] >= 2 and df_filtrado["Fecha"].nunique() >= 2:
                 fig_mq = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_mq,
+                    y=["Aljibes M&Q (Prog)", "Aljibes M&Q (Real)"],
                     title="Aljibes M&Q: Programados vs Reales"
                 )
                 st.plotly_chart(fig_mq, use_container_width=True)
@@ -129,12 +130,11 @@ if archivo:
                 st.info("No hay suficientes datos de Aljibes M&Q para graficar.")
 
         with col4:
-            cols_jorquera = ["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"]
-            if len(cols_jorquera) > 0 and df_filtrado["Fecha"].nunique() > 1:
+            if df_filtrado.shape[0] >= 2 and df_filtrado["Fecha"].nunique() >= 2:
                 fig_jorquera = px.line(
                     df_filtrado,
                     x="Fecha",
-                    y=cols_jorquera,
+                    y=["Aljibes Jorquera (Prog)", "Aljibes Jorquera (Real)"],
                     title="Aljibes Jorquera: Programados vs Reales"
                 )
                 st.plotly_chart(fig_jorquera, use_container_width=True)
