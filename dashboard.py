@@ -78,6 +78,8 @@ if archivo:
             st.write("Cantidad de filas después de filtrar:", len(df_filtrado))
             st.write("Columnas disponibles:", df_filtrado.columns.tolist())
 
+            # Imagen general arriba del dashboard general
+            st.image("image.png", width=200)
             st.subheader("Dashboard General")
 
             col1, col2 = st.columns(2)
